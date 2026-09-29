@@ -2,29 +2,38 @@ name: CodeQL
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
-  schedule:
-    - cron: 0 0 * * 0
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
-  analyse:
-    name: Analyse
-    runs-on: ubuntu-24.04
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - run: git checkout HEAD^2
-        if: ${{ github.event_name == 'pull_request' }}
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: go
-      - name: Perform CodeQL Analysis
+          languages: ${{ matrix.language }}
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze
         uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}
